@@ -127,3 +127,31 @@ export async function sendInquiry(inquiry: InquiryInput) {
   });
   return handleResponse(response);
 }
+
+// ---------- Users ----------
+
+export interface AppUser {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  created_at: string;
+}
+
+export async function getUserById(id: number | string): Promise<AppUser> {
+  const response = await fetch(`${BASE_URL}/users/${id}`);
+  return handleResponse(response);
+}
+
+export async function updateUser(
+  id: number | string,
+  user: { name: string; email: string; phone: string; role: string }
+): Promise<AppUser> {
+  const response = await fetch(`${BASE_URL}/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(user),
+  });
+  return handleResponse(response);
+}
