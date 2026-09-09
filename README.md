@@ -1,8 +1,8 @@
 # 🏠 AqarJo Frontend (React + Vite)
 
-AqarJo is a real-estate marketplace frontend for browsing, selling, and
-renting apartments, houses, and land in Jordan. It communicates with the
-AqarJo Express backend through REST APIs.
+> A real-estate marketplace frontend for browsing, selling, and renting
+> apartments, houses, and land in Jordan — talks to the AqarJo Express
+> backend through REST APIs.
 
 ## 🎯 Description
 
