@@ -52,6 +52,18 @@ export async function getUserProperties(userId: number | string): Promise<Proper
   return handleResponse(response);
 }
 
+export async function updatePropertyStatus(
+  id: number | string,
+  status: string
+): Promise<Property> {
+  const response = await fetch(`${BASE_URL}/properties/${id}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  return handleResponse(response);
+}
+
 export async function createProperty(property: PropertyInput): Promise<Property> {
   const response = await fetch(`${BASE_URL}/properties`, {
     method: "POST",
@@ -137,6 +149,11 @@ export interface AppUser {
   phone: string;
   role: string;
   created_at: string;
+}
+
+export async function getUsers(): Promise<AppUser[]> {
+  const response = await fetch(`${BASE_URL}/users`);
+  return handleResponse(response);
 }
 
 export async function getUserById(id: number | string): Promise<AppUser> {
