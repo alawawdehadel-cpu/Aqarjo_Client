@@ -1,10 +1,6 @@
 // Small helper file that wraps every call to the Express backend.
 // Every function uses the Fetch API with async/await, the same style
 // used throughout the rest of the app.
-//
-// This file only has the functions needed so far (Home page + favorites).
-// More endpoints (property CRUD, inquiries, users, ...) are added in the
-// branches that actually need them.
 import type { Property } from "../types/Property";
 
 const BASE_URL = "http://localhost:5000/api";
@@ -52,18 +48,6 @@ export async function getUserProperties(userId: number | string): Promise<Proper
   return handleResponse(response);
 }
 
-export async function updatePropertyStatus(
-  id: number | string,
-  status: string
-): Promise<Property> {
-  const response = await fetch(`${BASE_URL}/properties/${id}/status`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
-  });
-  return handleResponse(response);
-}
-
 export async function createProperty(property: PropertyInput): Promise<Property> {
   const response = await fetch(`${BASE_URL}/properties`, {
     method: "POST",
@@ -81,6 +65,18 @@ export async function updateProperty(
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(property),
+  });
+  return handleResponse(response);
+}
+
+export async function updatePropertyStatus(
+  id: number | string,
+  status: string
+): Promise<Property> {
+  const response = await fetch(`${BASE_URL}/properties/${id}/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
   });
   return handleResponse(response);
 }
