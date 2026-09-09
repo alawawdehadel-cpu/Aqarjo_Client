@@ -25,6 +25,11 @@ export async function getProperties(): Promise<Property[]> {
   return handleResponse(response);
 }
 
+export async function getPropertyById(id: number | string): Promise<Property> {
+  const response = await fetch(`${BASE_URL}/properties/${id}`);
+  return handleResponse(response);
+}
+
 // ---------- Favorites ----------
 // Matches the endpoints in aqairjo_server/routes/favoriteRoutes.js:
 //   GET    /api/favorites/:userId              -> favorited properties
@@ -53,4 +58,22 @@ export async function removeFavorite(
     method: "DELETE",
   });
   await handleResponse(response);
+}
+
+// ---------- Inquiries ----------
+
+export interface InquiryInput {
+  propertyId: number | string;
+  name: string;
+  email: string;
+  message: string;
+}
+
+export async function sendInquiry(inquiry: InquiryInput) {
+  const response = await fetch(`${BASE_URL}/inquiries`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(inquiry),
+  });
+  return handleResponse(response);
 }
