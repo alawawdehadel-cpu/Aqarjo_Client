@@ -3,7 +3,8 @@
 // used throughout the rest of the app.
 import type { Property } from "../types/Property";
 
-const BASE_URL = "http://localhost:5000/api";
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
+const BASE_URL = `${SERVER_URL}/api`;
 
 // Shared fetch wrapper used by every function below.
 //
