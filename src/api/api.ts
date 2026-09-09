@@ -1,0 +1,56 @@
+// Small helper file that wraps every call to the Express backend.
+// Every function uses the Fetch API with async/await, the same style
+// used throughout the rest of the app.
+//
+// This file only has the functions needed so far (Home page + favorites).
+// More endpoints (property CRUD, inquiries, users, ...) are added in the
+// branches that actually need them.
+import type { Property } from "../types/Property";
+
+const BASE_URL = "http://localhost:5000/api";
+
+// Shared helper: turns a non-ok response into a thrown error, and
+// returns the parsed JSON body otherwise.
+async function handleResponse(response: Response) {
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  return response.json();
+}
+
+// ---------- Properties ----------
+
+export async function getProperties(): Promise<Property[]> {
+  const response = await fetch(`${BASE_URL}/properties`);
+  return handleResponse(response);
+}
+
+// ---------- Favorites ----------
+// Matches the endpoints in aqairjo_server/routes/favoriteRoutes.js:
+//   GET    /api/favorites/:userId              -> favorited properties
+//   POST   /api/favorites                       -> add a favorite
+//   DELETE /api/favorites/:userId/:propertyId   -> remove a favorite
+
+export async function getFavorites(userId: number | string): Promise<Property[]> {
+  const response = await fetch(`${BASE_URL}/favorites/${userId}`);
+  return handleResponse(response);
+}
+
+export async function addFavorite(userId: number | string, propertyId: number | string) {
+  const response = await fetch(`${BASE_URL}/favorites`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, propertyId }),
+  });
+  return handleResponse(response);
+}
+
+export async function removeFavorite(
+  userId: number | string,
+  propertyId: number | string
+): Promise<void> {
+  const response = await fetch(`${BASE_URL}/favorites/${userId}/${propertyId}`, {
+    method: "DELETE",
+  });
+  await handleResponse(response);
+}
