@@ -47,6 +47,11 @@ export async function getPropertyById(id: number | string): Promise<Property> {
   return handleResponse(response);
 }
 
+export async function getUserProperties(userId: number | string): Promise<Property[]> {
+  const response = await fetch(`${BASE_URL}/properties/user/${userId}`);
+  return handleResponse(response);
+}
+
 export async function createProperty(property: PropertyInput): Promise<Property> {
   const response = await fetch(`${BASE_URL}/properties`, {
     method: "POST",
@@ -66,6 +71,13 @@ export async function updateProperty(
     body: JSON.stringify(property),
   });
   return handleResponse(response);
+}
+
+export async function deleteProperty(id: number | string): Promise<void> {
+  const response = await fetch(`${BASE_URL}/properties/${id}`, {
+    method: "DELETE",
+  });
+  await handleResponse(response);
 }
 
 // ---------- Favorites ----------
