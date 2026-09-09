@@ -18,6 +18,23 @@ async function handleResponse(response: Response) {
   return response.json();
 }
 
+// The data a form sends when creating/editing a property. Numbers are
+// real numbers here (not strings), unlike the raw <input> values.
+export interface PropertyInput {
+  title: string;
+  description: string;
+  price: number;
+  listingType: string;
+  propertyType: string;
+  city: string;
+  area: string;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  size: number;
+  image: string;
+  ownerId?: number;
+}
+
 // ---------- Properties ----------
 
 export async function getProperties(): Promise<Property[]> {
@@ -27,6 +44,27 @@ export async function getProperties(): Promise<Property[]> {
 
 export async function getPropertyById(id: number | string): Promise<Property> {
   const response = await fetch(`${BASE_URL}/properties/${id}`);
+  return handleResponse(response);
+}
+
+export async function createProperty(property: PropertyInput): Promise<Property> {
+  const response = await fetch(`${BASE_URL}/properties`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(property),
+  });
+  return handleResponse(response);
+}
+
+export async function updateProperty(
+  id: number | string,
+  property: PropertyInput
+): Promise<Property> {
+  const response = await fetch(`${BASE_URL}/properties/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(property),
+  });
   return handleResponse(response);
 }
 
