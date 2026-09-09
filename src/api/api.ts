@@ -170,6 +170,25 @@ export async function updateUser(
   });
 }
 
+// ---------- Location ----------
+// Geocodes a property's area/city into map coordinates using the backend's
+// /api/location route (which itself calls the OpenStreetMap Nominatim API).
+
+export interface PropertyLocation {
+  latitude: number;
+  longitude: number;
+  displayName: string;
+  source: string;
+}
+
+export async function getPropertyLocation(
+  area: string,
+  city: string
+): Promise<PropertyLocation> {
+  const params = new URLSearchParams({ area, city });
+  return apiFetch(`/location?${params.toString()}`);
+}
+
 // ---------- Auth ----------
 // Session-based authentication: a successful register/login makes Express
 // set a session cookie. The browser sends that cookie back automatically

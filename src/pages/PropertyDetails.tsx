@@ -3,9 +3,13 @@ import type { FormEvent } from "react";
 import { useParams, Link } from "react-router-dom";
 import PropertyCard from "../components/PropertyCard";
 import EmptyState from "../components/EmptyState";
-import { getPropertyById, getProperties, getFavorites, sendInquiry } from "../api/api";
-import type { AppUser } from "../api/api";
+import { getPropertyById, getProperties, getFavorites, getPropertyLocation, sendInquiry } from "../api/api";
+import type { AppUser, PropertyLocation } from "../api/api";
 import type { Property } from "../types/Property";
+
+// Roughly half a kilometre on each side of the point, just enough for a
+// close-up neighbourhood view.
+const MAP_BOUNDS_DELTA = 0.01;
 
 const amenities = ["Parking", "Balcony", "Elevator", "Central heating", "Furnished", "Security"];
 
@@ -20,6 +24,10 @@ function PropertyDetails({ currentUser }: PropertyDetailsProps) {
   const [similarProperties, setSimilarProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
+
+  const [location, setLocation] = useState<PropertyLocation | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
+  const [locationError, setLocationError] = useState(false);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -50,6 +58,31 @@ function PropertyDetails({ currentUser }: PropertyDetailsProps) {
 
     loadProperty();
   }, [id]);
+
+  // Once the property has loaded, turn its area/city into map coordinates
+  // through our backend (which itself calls the OpenStreetMap Nominatim
+  // API). This only ever runs once per property — never on every keystroke
+  // or re-render — and the backend caches identical area/city lookups.
+  useEffect(() => {
+    if (!property) return;
+
+    async function loadLocation() {
+      setLocationLoading(true);
+      setLocationError(false);
+      try {
+        const data = await getPropertyLocation(property!.area, property!.city);
+        setLocation(data);
+      } catch (err) {
+        console.log(err);
+        setLocation(null);
+        setLocationError(true);
+      } finally {
+        setLocationLoading(false);
+      }
+    }
+
+    loadLocation();
+  }, [property]);
 
   // Load the current user's favorite ids once, so PropertyCard doesn't
   // need to check the backend individually for every "similar property"
@@ -194,11 +227,43 @@ function PropertyDetails({ currentUser }: PropertyDetailsProps) {
           </div>
 
           <h2 className="h4 mb-3">Property location</h2>
-          <div className="map-placeholder">
-            Property Location
-            <br />
-            Map integration will be connected later.
-          </div>
+          {locationLoading ? (
+            <div className="map-placeholder">Loading property location...</div>
+          ) : locationError || !location ? (
+            <div className="map-placeholder">
+              Map location is currently unavailable.
+              <br />
+              {property.area}, {property.city}
+            </div>
+          ) : (
+            <>
+              <div className="property-map-frame">
+                <iframe
+                  title="Property location map"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${
+                    location.longitude - MAP_BOUNDS_DELTA
+                  }%2C${location.latitude - MAP_BOUNDS_DELTA}%2C${
+                    location.longitude + MAP_BOUNDS_DELTA
+                  }%2C${location.latitude + MAP_BOUNDS_DELTA}&layer=mapnik&marker=${
+                    location.latitude
+                  }%2C${location.longitude}`}
+                  loading="lazy"
+                />
+              </div>
+              <p className="text-muted-soft small mt-2 mb-1">
+                {property.area}, {property.city}
+              </p>
+              <p className="small mb-0">
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${location.latitude}&mlon=${location.longitude}#map=15/${location.latitude}/${location.longitude}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Location data &copy; OpenStreetMap contributors
+                </a>
+              </p>
+            </>
+          )}
         </div>
 
         <div className="col-12 col-lg-4">

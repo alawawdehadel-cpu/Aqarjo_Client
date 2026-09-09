@@ -21,6 +21,25 @@ notes:
   Properties" (`getMyProperties`) no longer take a user id — the backend
   always uses the logged-in session user.
 
+## Property location map (third-party API)
+
+`Property Details` shows a real embedded map instead of a placeholder.
+Once a property has loaded, the page calls
+`getPropertyLocation(property.area, property.city)`
+(`src/api/api.ts`), which hits the backend's `GET /api/location` route.
+The backend geocodes that text through the OpenStreetMap Nominatim API and
+returns `{ latitude, longitude, displayName, source }`; the frontend never
+calls Nominatim directly. Those coordinates are then used to build a small
+bounding box around the property and render it as an OpenStreetMap
+`iframe` embed (no map library installed).
+
+While the request is in flight it shows "Loading property location...";
+if geocoding fails (or the backend is unreachable) it falls back to a
+"Map location is currently unavailable." message and still shows the
+property's area/city — the rest of the page is unaffected. Below the map,
+the location is credited with a small "Location data © OpenStreetMap
+contributors" link, as required by OpenStreetMap's attribution policy.
+
 ---
 
 # React + Vite
