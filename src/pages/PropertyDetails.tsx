@@ -4,12 +4,16 @@ import { useParams, Link } from "react-router-dom";
 import PropertyCard from "../components/PropertyCard";
 import EmptyState from "../components/EmptyState";
 import { getPropertyById, getProperties, getFavorites, sendInquiry } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
+import type { AppUser } from "../api/api";
 import type { Property } from "../types/Property";
 
 const amenities = ["Parking", "Balcony", "Elevator", "Central heating", "Furnished", "Security"];
 
-function PropertyDetails() {
+interface PropertyDetailsProps {
+  currentUser: AppUser | null;
+}
+
+function PropertyDetails({ currentUser }: PropertyDetailsProps) {
   const { id } = useParams();
 
   const [property, setProperty] = useState<Property | null>(null);
@@ -48,11 +52,17 @@ function PropertyDetails() {
   }, [id]);
 
   // Load the current user's favorite ids once, so PropertyCard doesn't
-  // need to check the backend individually for every "similar property" card.
+  // need to check the backend individually for every "similar property"
+  // card. Skipped entirely when nobody is logged in.
   useEffect(() => {
+    if (!currentUser) {
+      setFavoriteIds(new Set());
+      return;
+    }
+
     async function loadFavorites() {
       try {
-        const favorites = await getFavorites(CURRENT_USER_ID);
+        const favorites = await getFavorites();
         setFavoriteIds(new Set(favorites.map((f) => f.id)));
       } catch (err) {
         console.log(err);
@@ -60,7 +70,7 @@ function PropertyDetails() {
     }
 
     loadFavorites();
-  }, []);
+  }, [currentUser]);
 
   function handleFavoriteToggle(propertyId: number, favorited: boolean) {
     setFavoriteIds((prev) => {
@@ -249,6 +259,7 @@ function PropertyDetails() {
               <div className="col-12 col-sm-6 col-lg-4" key={p.id}>
                 <PropertyCard
                   property={p}
+                  currentUser={currentUser}
                   isFavorited={favoriteIds.has(p.id)}
                   onFavoriteToggle={handleFavoriteToggle}
                 />

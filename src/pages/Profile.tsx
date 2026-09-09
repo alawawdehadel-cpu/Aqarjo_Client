@@ -1,36 +1,35 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
 import DashboardSidebar from "../components/DashboardSidebar";
-import { getUserById, updateUser } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
+import { updateUser } from "../api/api";
+import type { AppUser } from "../api/api";
 
-function Profile() {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("user");
+interface ProfileProps {
+  currentUser: AppUser;
+  setCurrentUser: (user: AppUser) => void;
+}
+
+function Profile({ currentUser, setCurrentUser }: ProfileProps) {
+  const [fullName, setFullName] = useState(currentUser.name);
+  const [email, setEmail] = useState(currentUser.email);
+  const [phone, setPhone] = useState(currentUser.phone);
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const user = await getUserById(CURRENT_USER_ID);
-        setFullName(user.name);
-        setEmail(user.email);
-        setPhone(user.phone);
-        setRole(user.role);
-      } catch (err) {
-        console.log(err);
-      }
-    }
-
-    loadUser();
-  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     try {
-      await updateUser(CURRENT_USER_ID, { name: fullName, email, phone, role });
+      // The backend keeps the existing role unless we're an admin, so we
+      // don't need to (and can't) change our own role from this form.
+      const updatedUser = await updateUser(currentUser.id, {
+        name: fullName,
+        email,
+        phone,
+        role: currentUser.role,
+      });
+
+      // Update App's currentUser too, so the Navbar shows the new name
+      // immediately without needing a refresh.
+      setCurrentUser(updatedUser);
       setSaved(true);
     } catch (err) {
       console.log(err);

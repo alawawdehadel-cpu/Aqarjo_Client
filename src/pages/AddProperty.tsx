@@ -3,7 +3,6 @@ import DashboardSidebar from "../components/DashboardSidebar";
 import PropertyForm from "../components/PropertyForm";
 import type { PropertyFormValues } from "../components/PropertyForm";
 import { createProperty } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
 
 function AddProperty() {
   const [submitted, setSubmitted] = useState(false);
@@ -24,7 +23,6 @@ function AddProperty() {
         bathrooms: isLand ? null : Number(values.bathrooms),
         size: Number(values.size),
         image: values.image,
-        ownerId: CURRENT_USER_ID,
       });
       setSubmitted(true);
     } catch (err) {

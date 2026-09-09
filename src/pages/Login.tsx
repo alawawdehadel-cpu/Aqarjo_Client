@@ -1,15 +1,35 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../api/api";
+import type { AppUser } from "../api/api";
 
-function Login() {
+interface LoginProps {
+  setCurrentUser: (user: AppUser) => void;
+}
+
+function Login({ setCurrentUser }: LoginProps) {
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setSubmitted(true);
+    setError("");
+    setLoading(true);
+
+    try {
+      const user = await loginUser(email, password);
+      setCurrentUser(user);
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -27,9 +47,9 @@ function Login() {
           <h1 className="h2 mb-1">Welcome back</h1>
           <p className="text-muted-soft mb-4">Log in to continue where you left off.</p>
 
-          {submitted && (
-            <div className="alert alert-info" role="alert">
-              Login functionality will be connected to the backend later.
+          {error && (
+            <div className="alert alert-danger" role="alert">
+              {error}
             </div>
           )}
 
@@ -55,8 +75,8 @@ function Login() {
                 required
               />
             </div>
-            <button type="submit" className="btn btn-primary w-100 mb-3">
-              Login
+            <button type="submit" className="btn btn-primary w-100 mb-3" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
             </button>
             <p className="text-center text-muted-soft small mb-0">
               Don't have an account? <Link to="/register">Register</Link>

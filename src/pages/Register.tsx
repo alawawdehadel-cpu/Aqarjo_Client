@@ -1,8 +1,16 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { registerUser } from "../api/api";
+import type { AppUser } from "../api/api";
 
-function Register() {
+interface RegisterProps {
+  setCurrentUser: (user: AppUser) => void;
+}
+
+function Register({ setCurrentUser }: RegisterProps) {
+  const navigate = useNavigate();
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -10,19 +18,30 @@ function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setSuccess(false);
+    setError("");
 
     if (password !== confirmPassword) {
       setError("Password and Confirm Password do not match.");
       return;
     }
 
-    setError("");
-    setSuccess(true);
+    setLoading(true);
+
+    try {
+      // The backend always creates public sign-ups as a normal "user" —
+      // there's no way to request an admin role from this form.
+      const user = await registerUser({ name: fullName, email, phone, password });
+      setCurrentUser(user);
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -44,11 +63,6 @@ function Register() {
           {error && (
             <div className="alert alert-danger" role="alert">
               {error}
-            </div>
-          )}
-          {success && (
-            <div className="alert alert-success" role="alert">
-              Account created successfully.
             </div>
           )}
 
@@ -92,6 +106,7 @@ function Register() {
                   className="form-control"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  minLength={6}
                   required
                 />
               </div>
@@ -102,12 +117,13 @@ function Register() {
                   className="form-control"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  minLength={6}
                   required
                 />
               </div>
             </div>
-            <button type="submit" className="btn btn-primary w-100 mb-3">
-              Create Account
+            <button type="submit" className="btn btn-primary w-100 mb-3" disabled={loading}>
+              {loading ? "Creating account..." : "Create Account"}
             </button>
             <p className="text-center text-muted-soft small mb-0">
               Already have an account? <Link to="/login">Login</Link>

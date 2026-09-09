@@ -3,10 +3,14 @@ import FilterSidebar from "../components/FilterSidebar";
 import PropertyCard from "../components/PropertyCard";
 import EmptyState from "../components/EmptyState";
 import { getProperties, getFavorites } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
+import type { AppUser } from "../api/api";
 import type { Property } from "../types/Property";
 
-function Properties() {
+interface PropertiesProps {
+  currentUser: AppUser | null;
+}
+
+function Properties({ currentUser }: PropertiesProps) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
@@ -48,11 +52,17 @@ function Properties() {
   }, []);
 
   // Load the current user's favorite ids once, so PropertyCard doesn't
-  // need to check the backend individually for every card.
+  // need to check the backend individually for every card. Skipped
+  // entirely when nobody is logged in, since /api/favorites requires auth.
   useEffect(() => {
+    if (!currentUser) {
+      setFavoriteIds(new Set());
+      return;
+    }
+
     async function loadFavorites() {
       try {
-        const favorites = await getFavorites(CURRENT_USER_ID);
+        const favorites = await getFavorites();
         setFavoriteIds(new Set(favorites.map((f) => f.id)));
       } catch (err) {
         console.log(err);
@@ -60,7 +70,7 @@ function Properties() {
     }
 
     loadFavorites();
-  }, []);
+  }, [currentUser]);
 
   function handleFavoriteToggle(propertyId: number, favorited: boolean) {
     setFavoriteIds((prev) => {
@@ -164,6 +174,7 @@ function Properties() {
                 <div className="col-12 col-sm-6 col-xl-4" key={property.id}>
                   <PropertyCard
                     property={property}
+                    currentUser={currentUser}
                     isFavorited={favoriteIds.has(property.id)}
                     onFavoriteToggle={handleFavoriteToggle}
                   />

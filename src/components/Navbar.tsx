@@ -1,9 +1,28 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import type { AppUser } from "../api/api";
+import { logoutUser } from "../api/api";
+
+interface NavbarProps {
+  currentUser: AppUser | null;
+  onLogout: () => void;
+}
 
 // Main site navigation. Bootstrap's collapse component (loaded as a JS
 // bundle in main.tsx) handles the mobile hamburger toggle for us, so this
 // component only needs the standard data-bs-* attributes.
-function Navbar() {
+function Navbar({ currentUser, onLogout }: NavbarProps) {
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    try {
+      await logoutUser();
+    } catch (err) {
+      console.log(err);
+    }
+    onLogout();
+    navigate("/");
+  }
+
   return (
     <nav className="navbar navbar-expand-lg navbar-aqarjo sticky-top">
       <div className="container">
@@ -50,21 +69,44 @@ function Navbar() {
                 Properties
               </NavLink>
             </li>
+            {currentUser && currentUser.role === "admin" && (
+              <li className="nav-item">
+                <NavLink className="nav-link" to="/admin">
+                  Admin Dashboard
+                </NavLink>
+              </li>
+            )}
           </ul>
 
           <div className="d-flex align-items-center gap-2 flex-wrap">
-            <Link className="btn btn-outline-primary btn-sm" to="/favorites">
-              Favorites
-            </Link>
-            <Link className="btn btn-outline-primary btn-sm" to="/login">
-              Login
-            </Link>
-            <Link className="btn btn-outline-primary btn-sm" to="/register">
-              Register
-            </Link>
-            <Link className="btn btn-primary btn-sm" to="/add-property">
-              + List Property
-            </Link>
+            {currentUser ? (
+              <>
+                <Link className="btn btn-outline-primary btn-sm" to="/favorites">
+                  Favorites
+                </Link>
+                <Link className="btn btn-outline-primary btn-sm" to="/my-properties">
+                  My Properties
+                </Link>
+                <Link className="btn btn-outline-primary btn-sm" to="/profile">
+                  {currentUser.name}
+                </Link>
+                <Link className="btn btn-primary btn-sm" to="/add-property">
+                  + List Property
+                </Link>
+                <button type="button" className="btn btn-outline-danger btn-sm" onClick={handleLogout}>
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link className="btn btn-outline-primary btn-sm" to="/login">
+                  Login
+                </Link>
+                <Link className="btn btn-outline-primary btn-sm" to="/register">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

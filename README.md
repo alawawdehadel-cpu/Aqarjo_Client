@@ -1,3 +1,28 @@
+# AqarJo Client
+
+## Authentication
+
+The app uses the backend's session-based authentication (see
+`aqairjo_server`'s README for the full details). A few frontend-specific
+notes:
+
+- `src/api/api.ts` sends every request with `credentials: "include"` so the
+  browser attaches the session cookie the backend sets on login/register.
+- Login state lives in `src/App.tsx` (`currentUser`, loaded once on startup
+  via `getCurrentUser()`) and is passed down to pages/components as props —
+  there's no Redux or Context here, just `useState` + props.
+- `/add-property`, `/edit-property/:id`, `/my-properties`, `/favorites` and
+  `/profile` are wrapped in a small `ProtectedRoute` (in `App.tsx`) that
+  redirects to `/login` if `currentUser` is `null`. `/admin` additionally
+  requires `currentUser.role === "admin"`. This is a convenience for
+  navigation only — the backend enforces the real authorization on every
+  request regardless of what the frontend shows or hides.
+- Favorites (`getFavorites`/`addFavorite`/`removeFavorite`) and "My
+  Properties" (`getMyProperties`) no longer take a user id — the backend
+  always uses the logged-in session user.
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

@@ -3,20 +3,25 @@ import DashboardSidebar from "../components/DashboardSidebar";
 import PropertyCard from "../components/PropertyCard";
 import EmptyState from "../components/EmptyState";
 import { getFavorites } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
+import type { AppUser } from "../api/api";
 import type { Property } from "../types/Property";
 
-function Favorites() {
+interface FavoritesProps {
+  currentUser: AppUser | null;
+}
+
+function Favorites({ currentUser }: FavoritesProps) {
   const [savedProperties, setSavedProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
   // The backend's favorites endpoint already joins favorites -> properties,
   // so it returns full property objects directly. This runs once when the
-  // page first opens.
+  // page first opens. (This page is wrapped in a ProtectedRoute in App.tsx,
+  // so currentUser is guaranteed to be set here.)
   useEffect(() => {
     async function loadFavorites() {
       try {
-        const data = await getFavorites(CURRENT_USER_ID);
+        const data = await getFavorites();
         setSavedProperties(data);
       } catch (err) {
         console.log(err);
@@ -63,6 +68,7 @@ function Favorites() {
                 <div className="col-12 col-sm-6 col-xl-4" key={property.id}>
                   <PropertyCard
                     property={property}
+                    currentUser={currentUser}
                     isFavorited={true}
                     onFavoriteToggle={handleFavoriteToggle}
                   />

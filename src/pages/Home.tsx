@@ -3,10 +3,14 @@ import { Link } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import PropertyCard from "../components/PropertyCard";
 import { getProperties, getFavorites } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
+import type { AppUser } from "../api/api";
 import type { Property } from "../types/Property";
 
-function Home() {
+interface HomeProps {
+  currentUser: AppUser | null;
+}
+
+function Home({ currentUser }: HomeProps) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
 
@@ -31,11 +35,17 @@ function Home() {
   }, []);
 
   // Load the current user's favorite ids once, so PropertyCard doesn't
-  // need to check the backend individually for every card.
+  // need to check the backend individually for every card. Skipped
+  // entirely when nobody is logged in, since /api/favorites requires auth.
   useEffect(() => {
+    if (!currentUser) {
+      setFavoriteIds(new Set());
+      return;
+    }
+
     async function loadFavorites() {
       try {
-        const favorites = await getFavorites(CURRENT_USER_ID);
+        const favorites = await getFavorites();
         setFavoriteIds(new Set(favorites.map((f) => f.id)));
       } catch (err) {
         console.log(err);
@@ -43,7 +53,7 @@ function Home() {
     }
 
     loadFavorites();
-  }, []);
+  }, [currentUser]);
 
   function handleFavoriteToggle(propertyId: number, favorited: boolean) {
     setFavoriteIds((prev) => {
@@ -127,6 +137,7 @@ function Home() {
             <div className="col-12 col-sm-6 col-lg-4" key={property.id}>
               <PropertyCard
                 property={property}
+                currentUser={currentUser}
                 isFavorited={favoriteIds.has(property.id)}
                 onFavoriteToggle={handleFavoriteToggle}
               />

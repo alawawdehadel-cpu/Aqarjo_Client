@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { Property } from "../types/Property";
+import type { AppUser } from "../api/api";
 import { addFavorite, removeFavorite } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
 
 // A single property is passed in as a prop and rendered as a card.
 // This component is reused on Home, Properties, PropertyDetails and
@@ -11,18 +11,28 @@ import { CURRENT_USER_ID } from "../constants/currentUser";
 // when the button is clicked.
 interface PropertyCardProps {
   property: Property;
+  currentUser: AppUser | null;
   isFavorited: boolean;
   onFavoriteToggle: (propertyId: number, favorited: boolean) => void;
 }
 
-function PropertyCard({ property, isFavorited, onFavoriteToggle }: PropertyCardProps) {
+function PropertyCard({ property, currentUser, isFavorited, onFavoriteToggle }: PropertyCardProps) {
+  const navigate = useNavigate();
+
   async function handleFavoriteClick() {
+    // Favorites belong to an account. If nobody is logged in, send them to
+    // the login page instead of calling the (now protected) backend route.
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+
     try {
       if (isFavorited) {
-        await removeFavorite(CURRENT_USER_ID, property.id);
+        await removeFavorite(property.id);
         onFavoriteToggle(property.id, false);
       } else {
-        await addFavorite(CURRENT_USER_ID, property.id);
+        await addFavorite(property.id);
         onFavoriteToggle(property.id, true);
       }
     } catch (err) {

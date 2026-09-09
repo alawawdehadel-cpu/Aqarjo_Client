@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardSidebar from "../components/DashboardSidebar";
-import { getUserProperties, deleteProperty } from "../api/api";
-import { CURRENT_USER_ID } from "../constants/currentUser";
+import { getMyProperties, deleteProperty } from "../api/api";
 import type { Property } from "../types/Property";
 
 function statusBadgeClass(status: Property["status"]) {
@@ -18,7 +17,7 @@ function MyProperties() {
   useEffect(() => {
     async function loadMyProperties() {
       try {
-        const data = await getUserProperties(CURRENT_USER_ID);
+        const data = await getMyProperties();
         setMyProperties(data);
       } catch (err) {
         console.log(err);
