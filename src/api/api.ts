@@ -171,6 +171,10 @@ export async function updateUser(
   });
 }
 
+export async function deleteUser(id: number | string): Promise<void> {
+  await apiFetch(`/users/${id}`, { method: "DELETE" });
+}
+
 // ---------- Location ----------
 // Geocodes a property's area/city into map coordinates using the backend's
 // /api/location route (which itself calls the OpenStreetMap Nominatim API).

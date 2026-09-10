@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import FilterSidebar from "../components/FilterSidebar";
 import PropertyCard from "../components/PropertyCard";
 import EmptyState from "../components/EmptyState";
@@ -11,6 +12,8 @@ interface PropertiesProps {
 }
 
 function Properties({ currentUser }: PropertiesProps) {
+  const [searchParams] = useSearchParams();
+
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
@@ -24,16 +27,18 @@ function Properties({ currentUser }: PropertiesProps) {
   const [sortBy, setSortBy] = useState("newest");
 
   // The Navbar and Home search links send filters through the URL query
-  // string (e.g. /properties?listingType=rent). We read them once, when
-  // this page first loads, using the browser's native URLSearchParams.
+  // string (e.g. /properties?listingType=rent). useSearchParams (from
+  // react-router-dom) re-renders whenever that query string changes, even
+  // if the user is already on this page — unlike reading
+  // window.location.search in a mount-only effect, which would miss it
+  // when clicking Buy → Rent → Land without leaving /properties.
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("listingType")) setListingType(params.get("listingType")!);
-    if (params.get("propertyType")) setPropertyType(params.get("propertyType")!);
-    if (params.get("city")) setCity(params.get("city")!);
-    if (params.get("minPrice")) setMinPrice(params.get("minPrice")!);
-    if (params.get("maxPrice")) setMaxPrice(params.get("maxPrice")!);
-  }, []);
+    if (searchParams.get("listingType")) setListingType(searchParams.get("listingType")!);
+    if (searchParams.get("propertyType")) setPropertyType(searchParams.get("propertyType")!);
+    if (searchParams.get("city")) setCity(searchParams.get("city")!);
+    if (searchParams.get("minPrice")) setMinPrice(searchParams.get("minPrice")!);
+    if (searchParams.get("maxPrice")) setMaxPrice(searchParams.get("maxPrice")!);
+  }, [searchParams]);
 
   // Load the properties from the backend once, when the page first opens.
   useEffect(() => {

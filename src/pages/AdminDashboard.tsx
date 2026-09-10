@@ -1,10 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getProperties, getUsers, updatePropertyStatus } from "../api/api";
+import {
+  getProperties,
+  getUsers,
+  updatePropertyStatus,
+  deleteProperty,
+  updateUser,
+  deleteUser,
+} from "../api/api";
 import type { AppUser } from "../api/api";
 import type { Property } from "../types/Property";
 
 type AdminTab = "dashboard" | "properties" | "users";
+
+interface UserEditForm {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+}
 
 function statusBadgeClass(status: Property["status"]) {
   if (status === "approved") return "badge-approved";
@@ -27,6 +41,15 @@ function AdminDashboard() {
 
   const [adminProperties, setAdminProperties] = useState<Property[]>([]);
   const [adminUsers, setAdminUsers] = useState<AppUser[]>([]);
+
+  // Which user row is currently being edited, and the form values for it.
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<UserEditForm>({
+    name: "",
+    email: "",
+    phone: "",
+    role: "user",
+  });
 
   // Load all properties from the backend once, when the page first opens.
   useEffect(() => {
@@ -62,6 +85,54 @@ function AdminDashboard() {
       setAdminProperties((prev) =>
         prev.map((property) => (property.id === id ? { ...property, status } : property))
       );
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  async function handleDeleteProperty(id: number, title: string) {
+    const confirmed = window.confirm(`Delete "${title}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteProperty(id);
+      setAdminProperties((prev) => prev.filter((property) => property.id !== id));
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  function startEditUser(user: AppUser) {
+    setEditingUserId(user.id);
+    setEditForm({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    });
+  }
+
+  function cancelEditUser() {
+    setEditingUserId(null);
+  }
+
+  async function handleSaveUser(id: number) {
+    try {
+      const updatedUser = await updateUser(id, editForm);
+      setAdminUsers((prev) => prev.map((user) => (user.id === id ? updatedUser : user)));
+      setEditingUserId(null);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  async function handleDeleteUser(id: number, name: string) {
+    const confirmed = window.confirm(`Delete "${name}"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteUser(id);
+      setAdminUsers((prev) => prev.filter((user) => user.id !== id));
     } catch (err) {
       console.log(err);
     }
@@ -210,10 +281,20 @@ function AdminDashboard() {
                         </span>
                       </td>
                       <td>
-                        <div className="d-flex gap-2 align-items-center">
+                        <div className="d-flex gap-2 align-items-center flex-wrap">
                           <Link to={`/properties/${property.id}`} className="small fw-semibold">
                             View
                           </Link>
+                          <Link to={`/edit-property/${property.id}`} className="small fw-semibold">
+                            Edit
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn btn-link btn-sm text-danger p-0 small fw-semibold"
+                            onClick={() => handleDeleteProperty(property.id, property.title)}
+                          >
+                            Delete
+                          </button>
                           {property.status === "pending" && (
                             <>
                               <button
@@ -246,26 +327,103 @@ function AdminDashboard() {
               <table className="table align-middle mb-0">
                 <thead>
                   <tr>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Phone</th>
                     <th>Role</th>
-                    <th>Listings</th>
-                    <th>Joined</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {adminUsers.map((user) => {
-                    const listingCount = adminProperties.filter(
-                      (property) => property.ownerId === user.id
-                    ).length;
+                    const isEditing = editingUserId === user.id;
+
+                    if (isEditing) {
+                      return (
+                        <tr key={user.id}>
+                          <td>{user.id}</td>
+                          <td>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              value={editForm.name}
+                              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="email"
+                              className="form-control form-control-sm"
+                              value={editForm.email}
+                              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="tel"
+                              className="form-control form-control-sm"
+                              value={editForm.phone}
+                              onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                            />
+                          </td>
+                          <td>
+                            <select
+                              className="form-select form-select-sm"
+                              value={editForm.role}
+                              onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                            >
+                              <option value="user">user</option>
+                              <option value="admin">admin</option>
+                            </select>
+                          </td>
+                          <td>
+                            <div className="d-flex gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={() => handleSaveUser(user.id)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={cancelEditUser}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
 
                     return (
                       <tr key={user.id}>
+                        <td>{user.id}</td>
                         <td>{user.name}</td>
                         <td>{user.email}</td>
+                        <td>{user.phone}</td>
                         <td className="text-capitalize">{user.role}</td>
-                        <td>{listingCount}</td>
-                        <td>{formatDate(user.created_at)}</td>
+                        <td>
+                          <div className="d-flex gap-3">
+                            <button
+                              type="button"
+                              className="btn btn-link btn-sm p-0 small fw-semibold"
+                              onClick={() => startEditUser(user)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-link btn-sm text-danger p-0 small fw-semibold"
+                              onClick={() => handleDeleteUser(user.id, user.name)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}
